@@ -1,3 +1,3 @@
-import { App } from '../page'
+import LoginForm from '../../components/login-form'
 
-export default function LoginPage() { return <App forcedPath="/login" /> }
+export default function LoginPage() { return <LoginForm /> }
