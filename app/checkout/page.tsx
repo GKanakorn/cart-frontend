@@ -1,3 +1,3 @@
-import { App } from '../page'
+import CheckoutPage from '../../components/checkout-page'
 
-export default function CheckoutPage() { return <App forcedPath="/checkout" /> }
+export default function Page() { return <CheckoutPage /> }
