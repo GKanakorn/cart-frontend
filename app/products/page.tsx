@@ -1,3 +1,3 @@
-import { App } from '../page'
+import ProductsPage from '../../components/products-page'
 
-export default function ProductsPage() { return <App forcedPath="/products" /> }
+export default function Page() { return <ProductsPage /> }
