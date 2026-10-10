@@ -1,68 +1,46 @@
-export type LoginCredentials = {
-    username: string
-    password: string
-}
+import { apiRequest } from './api-client'
+import { getAuthMode } from './store-service'
+import { mockStore } from './mock-store'
+import { StoreApiError, type AuthSession } from './store-contract'
 
-export type LoginResponse = {
-    message: string
-    user: {
-        user_id: string | number
-        username: string
-        role: string
+export type LoginCredentials = { username: string; password: string }
+export type LoginResponse = AuthSession
+export { StoreApiError as AuthApiError }
+
+function normalizeLoginResponse(payload: unknown): LoginResponse {
+    if (typeof payload !== 'object' || payload === null) {
+        throw new StoreApiError('รูปแบบข้อมูลตอบกลับจาก login API ไม่ถูกต้อง', 'API_RESPONSE_INVALID', 502)
     }
-    access_token: string
-}
 
-export class AuthApiError extends Error {
-    constructor(message: string, public readonly status?: number) {
-        super(message)
-        this.name = 'AuthApiError'
+    const body = payload as Record<string, unknown>
+    const legacyUser = typeof body.user === 'object' && body.user !== null
+        ? body.user as Record<string, unknown>
+        : undefined
+    const token = typeof body.token === 'string' ? body.token : body.access_token
+    const rawRole = typeof body.role === 'string' ? body.role : legacyUser?.role
+    const role = typeof rawRole === 'string' ? rawRole.toLowerCase() : ''
+    const memberTier = typeof body.memberTier === 'string' ? body.memberTier : legacyUser?.memberTier
+
+    if (typeof token !== 'string' || (role !== 'customer' && role !== 'admin')) {
+        throw new StoreApiError('รูปแบบข้อมูลตอบกลับจาก login API ไม่ถูกต้อง', 'API_RESPONSE_INVALID', 502)
     }
-}
 
-const LOGIN_ENDPOINT = '/auth/login'
-
-function isLoginResponse(value: unknown): value is LoginResponse {
-    if (typeof value !== 'object' || value === null) return false
-
-    const response = value as Partial<LoginResponse>
-    return typeof response.access_token === 'string'
-        && typeof response.user?.username === 'string'
-        && typeof response.user?.role === 'string'
-        && (typeof response.user?.user_id === 'string' || typeof response.user?.user_id === 'number')
+    return {
+        token,
+        role,
+        ...(memberTier === 'normal' || memberTier === 'prime' ? { memberTier } : {}),
+    }
 }
 
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, '')
-
-    if (!baseUrl) {
-        throw new AuthApiError('NEXT_PUBLIC_API_BASE_URL is not configured')
+    if (getAuthMode() === 'mock') {
+        return mockStore.login(credentials.username, credentials.password)
     }
 
-    let response: Response
-    try {
-        response = await fetch(`${baseUrl}${LOGIN_ENDPOINT}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials),
-        })
-    } catch {
-        throw new AuthApiError('เชื่อมต่อ API ไม่ได้ กรุณาตรวจสอบว่า backend กำลังทำงานอยู่')
-    }
-
-    const payload: unknown = await response.json().catch(() => null)
-
-    if (!response.ok) {
-        const message = typeof payload === 'object' && payload !== null && 'message' in payload
-            && typeof payload.message === 'string'
-            ? payload.message
-            : `Login request failed (${response.status})`
-        throw new AuthApiError(message, response.status)
-    }
-
-    if (!isLoginResponse(payload)) {
-        throw new AuthApiError('รูปแบบข้อมูลตอบกลับจาก login API ไม่ถูกต้อง', response.status)
-    }
-
-    return payload
+    const payload = await apiRequest<unknown>('/auth/login', {
+        method: 'POST',
+        body: credentials,
+        fallbackErrorCode: 'AUTH_INVALID_CREDENTIALS',
+    })
+    return normalizeLoginResponse(payload)
 }

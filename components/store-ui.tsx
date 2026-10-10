@@ -1,4 +1,10 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import type * as React from 'react'
+import { store } from '../lib/store-service'
+
+type NavUser = { username?: string; role?: 'customer' | 'admin' }
 
 function Cup({ size = 22 }: { size?: number }) {
     return (
@@ -58,29 +64,48 @@ export function Field({ label, id, children, ...props }: React.InputHTMLAttribut
     return <div className="field"><label htmlFor={id}>{label}</label>{children ?? <input id={id} {...props} />}</div>
 }
 
-function Navbar({ active, admin = false, cartCount = 2 }: { active: string; admin?: boolean; cartCount?: number }) {
+function Navbar({ active, admin = false }: { active: string; admin?: boolean }) {
+    const [user, setUser] = useState<NavUser | null>(null)
+    const [cartCount, setCartCount] = useState(0)
+    const isAdmin = admin || user?.role === 'admin'
+
+    useEffect(() => {
+        let storedUser: NavUser | null = null
+        try {
+            storedUser = JSON.parse(sessionStorage.getItem('auth_user') ?? 'null') as NavUser | null
+        } catch {
+            sessionStorage.removeItem('auth_user')
+        }
+        if (storedUser) setUser(storedUser)
+
+        const token = sessionStorage.getItem('access_token')
+        if (token && storedUser?.role !== 'admin') {
+            store.viewCart(token).then((cart) => setCartCount(cart.itemCount)).catch(() => setCartCount(0))
+        }
+    }, [])
+
     return (
         <header className="navbar">
             <div className="nav-inner">
                 <a className="brand" href="/products"><Cup />Bean Cart</a>
                 <nav aria-label="Main navigation">
-                    {admin ? (
+                    {isAdmin ? (
                         <>
-                            <a className={active === 'admin-products' ? 'nav-active' : ''} href="/admin/products">จัดการสินค้า</a>
-                            <a className={active === 'admin-coupons' ? 'nav-active' : ''} href="/admin/coupons">จัดการคูปอง</a>
+                            <a data-testid="nav-admin-products" className={active === 'admin-products' ? 'nav-active' : ''} href="/admin/products">จัดการสินค้า</a>
+                            <a data-testid="nav-admin-coupons" className={active === 'admin-coupons' ? 'nav-active' : ''} href="/admin/coupons">จัดการคูปอง</a>
                         </>
                     ) : (
                         <>
-                            <a className={active === 'products' ? 'nav-active' : ''} href="/products">สินค้า</a>
-                            <a className={active === 'cart' ? 'nav-active' : ''} href="/cart">ตะกร้า <span className="badge">{cartCount}</span></a>
-                            <a className={active === 'orders' ? 'nav-active' : ''} href="/orders">ออเดอร์ของฉัน</a>
+                            <a data-testid="nav-products" className={active === 'products' ? 'nav-active' : ''} href="/products">สินค้า</a>
+                            <a data-testid="nav-cart" className={active === 'cart' ? 'nav-active' : ''} href="/cart">ตะกร้า <span className="badge">{cartCount}</span></a>
+                            <a data-testid="nav-orders" className={active === 'orders' ? 'nav-active' : ''} href="/orders">ออเดอร์ของฉัน</a>
                         </>
                     )}
                 </nav>
                 <div className="nav-user">
-                    <span>{admin ? 'admin01' : 'cus_normal'}</span>
-                    <Chip status={admin ? 'ผู้ดูแล' : 'ลูกค้า'}>{admin ? 'ผู้ดูแล' : 'ลูกค้า'}</Chip>
-                    <Button variant="outline small">ออกจากระบบ</Button>
+                    <span>{user?.username ?? ''}</span>
+                    {user?.role && <Chip status={isAdmin ? 'ผู้ดูแล' : 'ลูกค้า'}>{isAdmin ? 'ผู้ดูแล' : 'ลูกค้า'}</Chip>}
+                    <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>
                 </div>
             </div>
         </header>

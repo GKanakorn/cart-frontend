@@ -1,9 +1,9 @@
-import { PRODUCTS, money } from '../lib/mock-data'
+import type { Order } from '../lib/store-contract'
 
 export type OrderSummaryVariant = 'checkout' | 'success' | 'order-detail'
 
-export default function OrderSummary({ variant }: { variant: OrderSummaryVariant }) {
-    const rows = PRODUCTS.slice(0, 2)
+export default function OrderSummary({ variant, order }: { variant: OrderSummaryVariant; order: Order }) {
+    const rows = order.items
     const prefix = variant
     const isCheckout = variant === 'checkout'
     const isSuccess = variant === 'success'
@@ -15,21 +15,21 @@ export default function OrderSummary({ variant }: { variant: OrderSummaryVariant
                 <thead><tr><th>สินค้า</th><th>ราคา/ชิ้น</th><th>จำนวน</th></tr></thead>
                 <tbody>
                     {rows.map((product) => (
-                        <tr data-testid={`${isSuccess ? 'success' : 'checkout'}-line-${product.id}`} key={product.id}>
+                        <tr data-testid={isSuccess ? `success-line-${product.productId}` : variant === 'order-detail' ? `order-line-${product.productId}` : `checkout-line-${product.productId}`} key={product.productId}>
                             <td>{product.name}</td>
-                            <td data-testid={`${prefix}-unit-price-${product.id}`} data-value={product.price}>{money(product.price)}</td>
-                            <td data-testid={`${prefix}-qty-${product.id}`} data-value="1">1</td>
+                            <td data-testid={variant === 'order-detail' ? 'order-line-unit-price' : `${prefix}-unit-price-${product.productId}`} data-value={product.unitPrice}>{`฿${product.unitPrice.toLocaleString('en-US')}`}</td>
+                            <td data-testid={variant === 'order-detail' ? 'order-line-qty' : `${prefix}-qty-${product.productId}`} data-value={product.quantity}>{product.quantity}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             <div className="totals">
-                <div>ยอดรวมสินค้า <strong data-testid={`${prefix}-subtotal`} data-value="1650">฿1,650</strong></div>
-                <div>ส่วนลด <strong data-testid={`${prefix}-discount`} data-value={isCheckout ? '0' : '165'}>{isCheckout ? '฿0' : '−฿165'}</strong></div>
-                <div>ค่าจัดส่ง <strong data-testid={`${prefix}-shipping`} data-value="0">฿0</strong></div>
-                <div className="grand">ยอดชำระสุทธิ <strong data-testid={`${prefix}-total`} data-value={isCheckout ? '1650' : '1485'}>{isCheckout ? '฿1,650' : '฿1,485'}</strong></div>
+                <div>ยอดรวมสินค้า <strong data-testid={variant === 'order-detail' ? 'order-detail-subtotal' : `${prefix}-subtotal`} data-value={order.subtotal}>{`฿${order.subtotal.toLocaleString('en-US')}`}</strong></div>
+                <div>ส่วนลด <strong data-testid={variant === 'order-detail' ? 'order-detail-discount' : `${prefix}-discount`} data-value={order.discount}>{`฿${order.discount.toLocaleString('en-US')}`}</strong></div>
+                <div>ค่าจัดส่ง <strong data-testid={variant === 'order-detail' ? 'order-detail-shipping' : `${prefix}-shipping`} data-value={order.shippingFee}>{`฿${order.shippingFee.toLocaleString('en-US')}`}</strong></div>
+                <div className="grand">ยอดชำระสุทธิ <strong data-testid={variant === 'order-detail' ? 'order-detail-total' : `${prefix}-total`} data-value={order.netTotal}>{`฿${order.netTotal.toLocaleString('en-US')}`}</strong></div>
             </div>
-            <p className="muted">โซนจัดส่ง: ในเมือง · ความเร็ว: ปกติ · คูปอง: {isCheckout ? '—' : 'SAVE10'}</p>
+            <p className="muted">โซนจัดส่ง: {order.zone} · ความเร็ว: {order.speed} · คูปอง: {order.couponCode ?? '—'}</p>
         </section>
     )
 }
