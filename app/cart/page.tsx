@@ -1,3 +1,3 @@
-import { App } from '../page'
+import CartPage from '../../components/cart-page'
 
-export default function CartPage() { return <App forcedPath="/cart" /> }
+export default function Page() { return <CartPage /> }

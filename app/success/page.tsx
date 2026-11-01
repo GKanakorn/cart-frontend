@@ -1,3 +1,3 @@
-import { App } from '../page'
+import SuccessPage from '../../components/success-page'
 
-export default function SuccessPage() { return <App forcedPath="/success" /> }
+export default function Page() { return <SuccessPage /> }

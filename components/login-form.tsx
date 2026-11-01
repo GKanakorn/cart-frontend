@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthApiError, login } from '../lib/auth-api'
+import { getAuthMode } from '../lib/store-service'
 
 type LoginErrors = {
     username?: string
@@ -13,6 +14,7 @@ export default function LoginForm() {
     const router = useRouter()
     const [errors, setErrors] = useState<LoginErrors>({})
     const [apiError, setApiError] = useState('')
+    const [apiErrorCode, setApiErrorCode] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -28,22 +30,26 @@ export default function LoginForm() {
 
         setErrors(nextErrors)
         setApiError('')
+        setApiErrorCode('')
         if (Object.keys(nextErrors).length > 0) return
 
         setIsSubmitting(true)
         try {
             const result = await login({ username, password })
-            sessionStorage.setItem('access_token', result.access_token)
-            sessionStorage.setItem('auth_user', JSON.stringify(result.user))
-            const destination = result.user.role.toLowerCase() === 'admin' ? '/admin/products' : '/products'
+            sessionStorage.setItem('access_token', result.token)
+            sessionStorage.setItem('auth_user', JSON.stringify({ username, role: result.role, memberTier: result.memberTier }))
+            const destination = result.role === 'admin' ? '/admin/products' : '/products'
             router.replace(destination)
         } catch (error) {
             if (error instanceof AuthApiError && error.status === 401) {
                 setApiError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+                setApiErrorCode('AUTH_INVALID_CREDENTIALS')
             } else if (error instanceof Error) {
                 setApiError(error.message)
+                setApiErrorCode('')
             } else {
                 setApiError('เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง')
+                setApiErrorCode('')
             }
         } finally {
             setIsSubmitting(false)
@@ -53,25 +59,22 @@ export default function LoginForm() {
     function clearFieldError(field: keyof LoginErrors) {
         setErrors((current) => ({ ...current, [field]: undefined }))
         setApiError('')
+        setApiErrorCode('')
     }
 
     return (
         <main className="login-page" data-testid="page-login">
             <form className="login-card" onSubmit={handleSubmit} noValidate>
                 <div className="brand login-brand">
-                    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8Z" />
-                        <path d="M6 1v3M10 1v3M14 1v3" />
-                    </svg>
-                    Bean Cart
+                    <img className="login-brand-icon" src="/Icon-Coffee-transparent.png" alt="" />
+                    Roast & Roll
                 </div>
                 <h1>เข้าสู่ระบบ</h1>
-                {apiError && <div className="message message-error" role="alert">{apiError}</div>}
                 <div className="field">
                     <label htmlFor="login-username">Username</label>
                     <input
                         id="login-username"
+                        data-testid="login-username"
                         name="username"
                         autoComplete="username"
                         required
@@ -86,6 +89,7 @@ export default function LoginForm() {
                     <label htmlFor="login-password">Password</label>
                     <input
                         id="login-password"
+                        data-testid="login-password"
                         name="password"
                         type="password"
                         autoComplete="current-password"
@@ -96,11 +100,12 @@ export default function LoginForm() {
                         onChange={() => clearFieldError('password')}
                     />
                     {errors.password && <p className="login-field-error" id="login-password-error" role="alert">{errors.password}</p>}
+                    {apiError && <div className="message message-error" data-testid="app-message" data-kind="error" data-code={apiErrorCode} role="alert">{apiError}</div>}
                 </div>
-                <button id="login-submit" type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                <button id="login-submit" data-testid="login-submit" type="submit" className="btn btn-primary" disabled={isSubmitting}>
                     {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
                 </button>
-                <p className="muted">บัญชีทดสอบ: cus_normal, cus_prime, admin01</p>
+                <p className="muted">{getAuthMode() === 'mock' ? 'Mock: cus_normal / 123456, cus_prime / 123456, admin01 / 123456' : 'เข้าสู่ระบบด้วยบัญชีที่ลงทะเบียนในระบบ'}</p>
             </form>
         </main>
     )

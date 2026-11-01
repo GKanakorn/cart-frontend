@@ -1,3 +1,3 @@
-import { App } from '../../page'
+import OrderDetailPage from '../../../components/order-detail-page'
 
-export default function OrderDetailPage() { return <App forcedPath="/orders/ORD-000001" /> }
+export default function Page() { return <OrderDetailPage /> }
