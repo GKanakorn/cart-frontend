@@ -24,6 +24,7 @@ export default function ProductsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
     const [errorCode, setErrorCode] = useState('')
+    const [actionError, setActionError] = useState<{ message: string; code: string; productId: string } | null>(null)
     const [hasToken, setHasToken] = useState(true)
     const [itemCount, setItemCount] = useState(0)
     const [quantities, setQuantities] = useState<Record<string, string>>({})
@@ -92,6 +93,14 @@ export default function ProductsPage() {
                 available: product.availableStock > 0, currentQtyInCart: 0, availableStock: product.availableStock,
             }),
         }))
+        if (actionError?.productId === id) setActionError(null)
+    }
+
+    function adjustProductQuantity(product: Product, amount: number) {
+        const current = Number(quantities[product.productId] ?? '1')
+        const next = Math.max(1, Math.min(Math.min(10, product.availableStock), current + amount))
+        setQuantities((values) => ({ ...values, [product.productId]: String(next) }))
+        setQuantityErrors((values) => ({ ...values, [product.productId]: 'OK' }))
     }
 
     async function handleAddItem(product: Product) {
@@ -106,6 +115,7 @@ export default function ProductsPage() {
 
         setAddingProductId(product.productId)
         setError('')
+        setActionError(null)
         setNotice('')
         try {
             const cart = await store.addItem(token, product.productId, Number(quantity))
@@ -113,8 +123,7 @@ export default function ProductsPage() {
             setNotice('เพิ่มสินค้าลงตะกร้าแล้ว')
         } catch (requestError) {
             const result = getErrorMessage(requestError)
-            setError(result.message)
-            setErrorCode(result.code)
+            setActionError({ ...result, productId: product.productId })
         } finally {
             setAddingProductId(null)
         }
@@ -126,7 +135,7 @@ export default function ProductsPage() {
         <>
             <header className="navbar">
                 <div className="nav-inner">
-                    <a className="brand" href="/products"><span aria-hidden="true">☕</span>Bean Cart</a>
+                    <a className="brand" href="/products"><span className="brand-icon-crop"><img className="brand-icon" src="/Icon-Coffee.png" alt="" /></span>Roast &amp; Roll</a>
                     <nav aria-label="Main navigation">
                         <a data-testid={isAdmin ? 'nav-admin-products' : 'nav-products'} className="nav-active" href={isAdmin ? '/admin/products' : '/products'}>{isAdmin ? 'จัดการสินค้า' : 'สินค้า'}</a>
                         {isAdmin ? <a data-testid="nav-admin-coupons" href="/admin/coupons">จัดการคูปอง</a> : <><a data-testid="nav-cart" href="/cart">ตะกร้า <span className="badge">{itemCount}</span></a><a data-testid="nav-orders" href="/orders">ออเดอร์ของฉัน</a></>}
@@ -156,15 +165,21 @@ export default function ProductsPage() {
                                     <article className="card product-card" data-testid={`product-row-${product.productId}`} key={product.productId}>
                                         <img className="product-card-image" src="/images/coffee-beans.png" alt={`รูปสินค้า ${product.name}`} />
                                         <h2 data-testid="product-name">{product.name}</h2>
+                                        <p className="muted" data-testid="product-id">รหัสสินค้า: {product.productId}</p>
                                         <strong className="price" data-testid="product-price" data-value={product.price}>{formatPrice(product.price)}</strong>
                                         <div className="muted product-stock" data-testid="product-stock" data-value={product.availableStock}>
-                                            <span>{product.weightGram.toLocaleString('en-US')} g</span><span>คงเหลือ {product.availableStock}</span>
+                                            <span>{product.weightGram.toLocaleString('en-US')} g/ชิ้น</span><span>คงเหลือ {product.availableStock}</span>
                                         </div>
                                         <div className="product-action">
                                             <div className="field">
                                                 <label htmlFor={`product-add-qty-${product.productId}`}>จำนวน</label>
-                                                <input id={`product-add-qty-${product.productId}`} data-testid="product-add-qty" type="number" min="1" max={Math.min(10, product.availableStock)} step="1" required value={quantity} disabled={product.availableStock < 1} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? `product-add-qty-error-${product.productId}` : undefined} onChange={(event) => handleQuantityChange(product, event)} />
+                                                <div className="quantity-control">
+                                                    <button type="button" className="quantity-step" data-testid="product-qty-decrease" aria-label={`ลดจำนวน ${product.name}`} disabled={product.availableStock < 1 || Number(quantity) <= 1} onClick={() => adjustProductQuantity(product, -1)}>−</button>
+                                                    <input id={`product-add-qty-${product.productId}`} data-testid="product-add-qty" type="number" min="1" max={Math.min(10, product.availableStock)} step="1" required value={quantity} disabled={product.availableStock < 1} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? `product-add-qty-error-${product.productId}` : undefined} onChange={(event) => handleQuantityChange(product, event)} />
+                                                    <button type="button" className="quantity-step" data-testid="product-qty-increase" aria-label={`เพิ่มจำนวน ${product.name}`} disabled={product.availableStock < 1 || Number(quantity) >= Math.min(10, product.availableStock)} onClick={() => adjustProductQuantity(product, 1)}>+</button>
+                                                </div>
                                                 {quantityError && <p className="login-field-error" id={`product-add-qty-error-${product.productId}`} data-testid="app-message" data-kind="error" data-code={errorCode} role="alert">{quantityError}</p>}
+                                                {actionError?.productId === product.productId && <p className="login-field-error" data-testid="app-message" data-kind="error" data-code={actionError.code} role="alert">{actionError.message}</p>}
                                             </div>
                                             <button type="button" data-testid="product-add-button" className="btn btn-primary" disabled={product.availableStock < 1 || Boolean(quantityError) || addingProductId === product.productId} onClick={() => handleAddItem(product)}>{addingProductId === product.productId ? 'กำลังเพิ่ม...' : 'เพิ่มลงตะกร้า'}</button>
                                         </div>

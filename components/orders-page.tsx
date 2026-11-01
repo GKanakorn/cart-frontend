@@ -39,7 +39,7 @@ export default function OrdersPage() {
                             {orders.map((order) => (
                                 <tr data-testid={`order-row-${order.orderId}`} key={order.orderId}>
                                     <td>{order.orderId}</td>
-                                    <td><Chip status={order.status}><span data-testid="order-status">{order.status}</span></Chip></td>
+                                    <td><Chip status={order.status}><span data-testid="order-status" data-status={order.status}>{order.status}</span></Chip></td>
                                     <td data-testid="order-total" data-value={order.netTotal}>{`฿${order.netTotal.toLocaleString('en-US')}`}</td>
                                     <td>{new Date(order.createdAt).toLocaleDateString('th-TH')}</td>
                                     <td><Link className="btn btn-link" data-testid="order-view" href={`/orders/${encodeURIComponent(order.orderId)}`}>ดูรายละเอียด</Link></td>

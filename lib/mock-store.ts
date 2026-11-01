@@ -34,14 +34,14 @@ type MockUser = { username: string; role: UserRole; memberTier?: MemberTier }
 
 const STORAGE_KEY = 'bean-cart-mock-state-v1'
 const accounts: Record<string, { role: UserRole; memberTier?: MemberTier }> = {
-    customermock01: { role: 'customer', memberTier: 'normal' },
-    customermock02: { role: 'customer', memberTier: 'prime' },
-    adminmock01: { role: 'admin' },
+    cus_normal: { role: 'customer', memberTier: 'normal' },
+    cus_prime: { role: 'customer', memberTier: 'prime' },
+    admin01: { role: 'admin' },
 }
 const accountPasswords: Record<string, string> = {
-    customermock01: '123456',
-    customermock02: '123456',
-    adminmock01: '123456',
+    cus_normal: '123456',
+    cus_prime: '123456',
+    admin01: '123456',
 }
 
 function createInitialState(): MockState {

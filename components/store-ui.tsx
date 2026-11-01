@@ -6,16 +6,6 @@ import { store } from '../lib/store-service'
 
 type NavUser = { username?: string; role?: 'customer' | 'admin' }
 
-function Cup({ size = 22 }: { size?: number }) {
-    return (
-        <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8Z" />
-            <path d="M6 1v3M10 1v3M14 1v3" />
-        </svg>
-    )
-}
-
 export function Icon({ kind }: { kind: 'error' | 'info' | 'check' | 'cart' }) {
     if (kind === 'check') return <span className="success-icon" aria-hidden="true">✓</span>
     if (kind === 'cart') {
@@ -57,7 +47,8 @@ export function Message({ kind, children, code = '' }: { kind: 'error' | 'notice
 }
 
 export function Button({ children, variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) {
-    return <button type="button" className={`btn btn-${variant}`} {...props}>{children}</button>
+    const variantClasses = variant.split(/\s+/).map((part) => part === 'small' ? 'btn-small' : `btn-${part}`).join(' ')
+    return <button type="button" className={`btn ${variantClasses}`} {...props}>{children}</button>
 }
 
 export function Field({ label, id, children, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; children?: React.ReactNode }) {
@@ -87,7 +78,7 @@ function Navbar({ active, admin = false }: { active: string; admin?: boolean }) 
     return (
         <header className="navbar">
             <div className="nav-inner">
-                <a className="brand" href="/products"><Cup />Bean Cart</a>
+                <a className="brand" href="/products"><span className="brand-icon-crop"><img className="brand-icon" src="/Icon-Coffee.png" alt="" /></span>Roast &amp; Roll</a>
                 <nav aria-label="Main navigation">
                     {isAdmin ? (
                         <>

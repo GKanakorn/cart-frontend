@@ -56,7 +56,7 @@ export default function AdminCouponsPage() {
                                     <td>{coupon.code}</td>
                                     <td data-testid="admin-coupon-percent" data-value={coupon.percent}>{coupon.percent}%</td>
                                     <td data-testid="admin-coupon-min-spend" data-value={coupon.minSpend}>{`฿${coupon.minSpend.toLocaleString('en-US')}`}</td>
-                                    <td><Chip status={coupon.status}><span data-testid="admin-coupon-status">{coupon.status}</span></Chip></td>
+                                    <td><Chip status={coupon.status}><span data-testid="admin-coupon-status" data-status={coupon.status}>{coupon.status}</span></Chip></td>
                                     <td><Button variant={coupon.status === 'เปิดใช้' ? 'danger small' : 'outline small'} data-testid="admin-coupon-toggle-status" onClick={() => void toggleCoupon(coupon)}>{coupon.status === 'เปิดใช้' ? 'ปิดใช้' : 'เปิดใช้'}</Button></td>
                                 </tr>
                             ))}

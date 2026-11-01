@@ -66,16 +66,10 @@ export default function LoginForm() {
         <main className="login-page" data-testid="page-login">
             <form className="login-card" onSubmit={handleSubmit} noValidate>
                 <div className="brand login-brand">
-                    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8Z" />
-                        <path d="M6 1v3M10 1v3M14 1v3" />
-                    </svg>
-                    Bean Cart
+                    <img className="login-brand-icon" src="/Icon-Coffee-transparent.png" alt="" />
+                    Roast & Roll
                 </div>
                 <h1>เข้าสู่ระบบ</h1>
-                {apiError && <div className="message message-error" data-testid="app-message" data-kind="error" data-code={apiErrorCode} role="alert">{apiError}</div>}
-                {!apiError && (errors.username || errors.password) && <div className="message message-error" data-testid="app-message" data-kind="error" data-code="VALIDATION_ERROR" role="alert">กรุณากรอก Username และ Password ให้ครบ</div>}
                 <div className="field">
                     <label htmlFor="login-username">Username</label>
                     <input
@@ -106,11 +100,12 @@ export default function LoginForm() {
                         onChange={() => clearFieldError('password')}
                     />
                     {errors.password && <p className="login-field-error" id="login-password-error" role="alert">{errors.password}</p>}
+                    {apiError && <div className="message message-error" data-testid="app-message" data-kind="error" data-code={apiErrorCode} role="alert">{apiError}</div>}
                 </div>
                 <button id="login-submit" data-testid="login-submit" type="submit" className="btn btn-primary" disabled={isSubmitting}>
                     {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
                 </button>
-                <p className="muted">{getAuthMode() === 'mock' ? 'Mock: customermock01 / 123456, customermock02 / 123456, adminmock01 / 123456' : 'เข้าสู่ระบบด้วยบัญชีที่ลงทะเบียนในระบบ'}</p>
+                <p className="muted">{getAuthMode() === 'mock' ? 'Mock: cus_normal / 123456, cus_prime / 123456, admin01 / 123456' : 'เข้าสู่ระบบด้วยบัญชีที่ลงทะเบียนในระบบ'}</p>
             </form>
         </main>
     )

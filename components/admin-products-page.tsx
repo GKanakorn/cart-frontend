@@ -116,14 +116,16 @@ export default function AdminProductsPage() {
                 {!isLoading && !error && products.length === 0 && <p className="muted">ไม่มีสินค้า</p>}
                 {!isLoading && products.length > 0 && <div className="table-wrap">
                     <table>
-                        <thead><tr><th>ชื่อสินค้า</th><th>ราคา</th><th>สต็อก</th><th>สถานะ</th><th>ราคาใหม่</th><th>สต็อกใหม่</th><th>บันทึก</th><th>สถานะ</th></tr></thead>
+                        <thead><tr><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>ราคา</th><th>น้ำหนัก/ชิ้น</th><th>สต็อกพร้อมขาย</th><th>สถานะการขาย</th><th>ราคาใหม่</th><th>สต็อกใหม่</th><th>บันทึก</th><th>สถานะ</th></tr></thead>
                         <tbody>
                             {products.map((product) => (
                                 <tr data-testid={`admin-product-row-${product.productId}`} key={product.productId}>
+                                    <td data-testid="admin-product-id">{product.productId}</td>
                                     <td>{product.name}</td>
                                     <td data-testid="admin-product-price" data-value={product.price}>{formatPrice(product.price)}</td>
+                                    <td data-testid="admin-product-weight" data-value={product.weightGram}>{product.weightGram.toLocaleString('en-US')} g</td>
                                     <td data-testid="admin-product-stock" data-value={product.availableStock}>{product.availableStock}</td>
-                                    <td><Chip status={product.status}><span data-testid="admin-product-status">{product.status ?? '—'}</span></Chip></td>
+                                    <td><Chip status={product.status}><span data-testid="admin-product-status" data-status={product.status}>{product.status ?? '—'}</span></Chip></td>
                                     <td>
                                         <Field label="ราคาใหม่" id={`admin-price-${product.productId}`} data-testid="admin-product-price-input" type="number" min="1" max="50000" step="1" aria-label={`ราคาใหม่ ${product.name}`} value={edits[product.productId]?.price ?? ''} aria-invalid={Boolean(editErrors[product.productId]?.price)} onChange={(event) => handleProductEdit(product.productId, 'price', event.currentTarget.value)} />
                                         {editErrors[product.productId]?.price && <p className="login-field-error">{editErrors[product.productId].price}</p>}

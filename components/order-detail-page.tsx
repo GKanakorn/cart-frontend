@@ -34,7 +34,7 @@ export default function OrderDetailPage() {
                 <Button variant="link back" onClick={() => router.push('/orders')}>← กลับไปรายการออเดอร์</Button>
                 {error && <Message kind="error" code={errorCode}>{error}</Message>}
                 {order && <>
-                    <PageTitle><span data-testid="order-detail-id">{order.orderId}</span> <span className="muted order-id">{new Date(order.createdAt).toLocaleDateString('th-TH')}</span><Chip status={order.status}><span data-testid="order-detail-status">{order.status}</span></Chip></PageTitle>
+                    <PageTitle><span data-testid="order-detail-id">{order.orderId}</span> <span className="muted order-id">{new Date(order.createdAt).toLocaleDateString('th-TH')}</span><Chip status={order.status}><span data-testid="order-detail-status" data-status={order.status}>{order.status}</span></Chip></PageTitle>
                     <OrderSummary variant="order-detail" order={order} />
                 </>}
             </main>

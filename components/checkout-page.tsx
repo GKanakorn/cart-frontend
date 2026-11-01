@@ -128,8 +128,8 @@ export default function CheckoutPage() {
                 {order && <div className="gateway">
                     <strong>จำลอง Payment Gateway (test only)</strong>
                     <p className="muted">ใช้สำหรับทดสอบผลลัพธ์การชำระเงินเท่านั้น</p>
-                    <Button id="gateway-pay-success" disabled={isWorking} onClick={handlePaySuccess}>จำลองชำระสำเร็จ</Button>
-                    <Button variant="grey" id="gateway-pay-fail" disabled={isWorking} onClick={handlePayFail}>จำลองชำระล้มเหลว</Button>
+                    <Button id="gateway-pay-success" data-testid="gateway-pay-success" disabled={isWorking} onClick={handlePaySuccess}>จำลองชำระสำเร็จ</Button>
+                    <Button variant="grey" id="gateway-pay-fail" data-testid="gateway-pay-fail" disabled={isWorking} onClick={handlePayFail}>จำลองชำระล้มเหลว</Button>
                 </div>}
                 {order && <Button variant="danger" id="cancel-checkout-button" disabled={isWorking} onClick={handleCancel}>ยกเลิกการชำระเงิน</Button>}
             </main>

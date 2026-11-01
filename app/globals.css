@@ -35,6 +35,12 @@ button {
     padding: 32px 0 56px
 }
 
+.content:has(> main[data-testid="page-cart"]) {
+    max-width: 1280px;
+    padding-right: 24px;
+    padding-left: 24px
+}
+
 .navbar {
     height: 64px;
     border-bottom: 1px solid #e6e6e0;
@@ -58,6 +64,22 @@ button {
     font-weight: 700;
     font-size: 20px;
     white-space: nowrap
+}
+
+.brand-icon {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    flex: 0 0 auto
+}
+
+.brand-icon-crop {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px
 }
 
 .navbar nav {
@@ -231,7 +253,45 @@ h2 {
 }
 
 .product-action .field {
-    width: 90px
+    width: auto
+}
+
+.quantity-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px
+}
+
+.quantity-control input {
+    width: 48px;
+    height: 40px;
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #e6e6e0;
+    border-radius: 10px;
+    background: #f5f5f5;
+    font-size: 18px
+}
+
+.quantity-step {
+    width: 32px;
+    height: 40px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #777;
+    font-size: 24px;
+    line-height: 1
+}
+
+.quantity-step:hover:not(:disabled) {
+    background: #f0f0ec;
+    color: #333
+}
+
+.quantity-step:disabled {
+    cursor: not-allowed;
+    opacity: .35
 }
 
 .product-action .btn {
@@ -399,6 +459,19 @@ h2 {
     border-color: #f5c6c2
 }
 
+.message-error>*:first-child {
+    margin-left: 0
+}
+
+.content .message>*:first-child {
+    margin-left: 0
+}
+
+.content .message {
+    padding-right: 12px;
+    padding-left: 12px
+}
+
 .message-notice {
     background: #fff8e1;
     color: #7a5200;
@@ -413,7 +486,7 @@ h2 {
 
 .two-col {
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: 24px;
     align-items: start
 }
@@ -446,6 +519,51 @@ th {
     font-weight: 600
 }
 
+.cart-table th.center-cell,
+.cart-table td.center-cell {
+    text-align: center
+}
+
+.cart-table th.numeric-cell,
+.cart-table td.numeric-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums
+}
+
+.cart-table .quantity-control {
+    justify-content: center
+}
+
+.cart-table .inline-field {
+    justify-content: center;
+    flex-wrap: wrap
+}
+
+.cart-table th:first-child,
+.cart-table td:first-child {
+    width: 28%
+}
+
+.cart-table th:nth-child(2),
+.cart-table td:nth-child(2) {
+    width: 16%
+}
+
+.cart-table th:nth-child(3),
+.cart-table td:nth-child(3) {
+    width: 28%
+}
+
+.cart-table th:nth-child(4),
+.cart-table td:nth-child(4) {
+    width: 18%
+}
+
+.cart-table th:nth-child(5),
+.cart-table td:nth-child(5) {
+    width: 10%
+}
+
 tbody tr:last-child td {
     border-bottom: 0
 }
@@ -465,11 +583,27 @@ tbody tr:last-child td {
     padding: 5px
 }
 
+.quantity-control-cart input {
+    width: 48px;
+    height: 34px;
+    font-size: 16px
+}
+
+.quantity-control-cart .quantity-step {
+    width: 28px;
+    height: 34px;
+    font-size: 21px
+}
+
 .coupon-row {
     display: flex;
-    align-items: end;
+    align-items: flex-start;
     gap: 12px;
     margin-top: 18px
+}
+
+.coupon-row > .btn {
+    margin-top: 23px
 }
 
 .coupon-row .field {
@@ -483,7 +617,9 @@ tbody tr:last-child td {
 .summary {
     display: flex;
     flex-direction: column;
-    gap: 18px
+    gap: 18px;
+    width: 100%;
+    justify-self: stretch
 }
 
 .summary h2 {
@@ -592,7 +728,16 @@ tbody tr:last-child td {
 
 .login-brand {
     font-size: 18px;
-    margin-bottom: 20px
+    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 12px
+}
+
+.login-brand-icon {
+    display: block;
+    width: 112px;
+    height: 112px;
+    object-fit: contain
 }
 
 .login-card h1 {
@@ -654,10 +799,25 @@ tbody tr:last-child td {
         padding: 24px 16px
     }
 
+    .navbar {
+        height: auto;
+        min-height: 64px
+    }
+
     .nav-inner {
-        padding: 0 16px;
-        gap: 12px;
-        overflow-x: auto
+        min-height: 64px;
+        height: auto;
+        padding: 8px 16px;
+        gap: 8px 12px;
+        flex-wrap: wrap
+    }
+
+    .navbar nav {
+        order: 3;
+        width: 100%;
+        height: 46px;
+        overflow-x: auto;
+        justify-content: center
     }
 
     .navbar nav button {
@@ -666,6 +826,11 @@ tbody tr:last-child td {
     }
 
     .nav-user {
+        display: flex;
+        margin-left: auto
+    }
+
+    .nav-user>span:first-child {
         display: none
     }
 
@@ -675,6 +840,15 @@ tbody tr:last-child td {
 
     .two-col {
         grid-template-columns: 1fr
+    }
+
+    .summary {
+        max-width: none
+    }
+
+    .content:has(> main[data-testid="page-cart"]) {
+        padding-right: 16px;
+        padding-left: 16px
     }
 
     .message {
@@ -705,6 +879,49 @@ tbody tr:last-child td {
 
     .gateway .btn {
         width: 100%
+    }
+
+    .nav-inner {
+        padding-right: 10px;
+        padding-left: 10px
+    }
+
+    .brand {
+        font-size: 18px
+    }
+
+    .nav-user .btn {
+        padding: 6px 9px;
+        min-height: 32px;
+        font-size: 12px
+    }
+
+    .navbar nav {
+        justify-content: flex-start
+    }
+
+    .coupon-row {
+        align-items: stretch;
+        flex-direction: column
+    }
+
+    .coupon-row > .btn {
+        margin-top: 0
+    }
+
+    .coupon-row .field,
+    .coupon-row .btn {
+        width: 100%
+    }
+
+    .cart-table th,
+    .cart-table td {
+        padding: 10px 8px
+    }
+
+    .cart-table th:nth-child(3),
+    .cart-table td:nth-child(3) {
+        min-width: 220px
     }
 }
 
