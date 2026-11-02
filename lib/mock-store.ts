@@ -41,7 +41,7 @@ const accounts: Record<string, { role: UserRole; memberTier?: MemberTier }> = {
 const accountPasswords: Record<string, string> = {
     cus_normal: '123456',
     cus_prime: '123456',
-    admin01: '123456',
+    admin01: 'admin123',
 }
 
 function createInitialState(): MockState {

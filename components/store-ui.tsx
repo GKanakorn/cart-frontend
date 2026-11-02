@@ -96,7 +96,7 @@ function Navbar({ active, admin = false }: { active: string; admin?: boolean }) 
                 <div className="nav-user">
                     <span>{user?.username ?? ''}</span>
                     {user?.role && <Chip status={isAdmin ? 'ผู้ดูแล' : 'ลูกค้า'}>{isAdmin ? 'ผู้ดูแล' : 'ลูกค้า'}</Chip>}
-                    <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>
+                    {user && <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
                 </div>
             </div>
         </header>

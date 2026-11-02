@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import AuthBoundary from '../components/auth-boundary'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className="antialiased">
-        {children}
+        <AuthBoundary>{children}</AuthBoundary>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

@@ -49,7 +49,7 @@ export default function SuccessPage() {
         try {
             await store.continueShopping(token)
             sessionStorage.removeItem('active_order')
-            router.replace('/cart')
+            router.replace('/products')
         } catch (actionError) {
             setError(actionError instanceof Error ? actionError.message : 'ทำรายการไม่สำเร็จ')
             setErrorCode(actionError instanceof StoreApiError ? actionError.code : '')

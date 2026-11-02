@@ -143,7 +143,7 @@ export default function ProductsPage() {
                     <div className="nav-user">
                         <span>{user?.username ?? ''}</span>
                         {user?.role && <span className={`chip ${isAdmin ? 'chip-blue' : 'chip-green'}`}>{user.role}</span>}
-                        <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>
+                        {user && <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
                     </div>
                 </div>
             </header>

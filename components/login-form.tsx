@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthApiError, login } from '../lib/auth-api'
 import { getAuthMode } from '../lib/store-service'
@@ -16,6 +16,13 @@ export default function LoginForm() {
     const [apiError, setApiError] = useState('')
     const [apiErrorCode, setApiErrorCode] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get('error') === 'AUTH_REQUIRED') {
+            setApiError('กรุณาเข้าสู่ระบบก่อน')
+            setApiErrorCode('AUTH_REQUIRED')
+        }
+    }, [])
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -38,7 +45,14 @@ export default function LoginForm() {
             const result = await login({ username, password })
             sessionStorage.setItem('access_token', result.token)
             sessionStorage.setItem('auth_user', JSON.stringify({ username, role: result.role, memberTier: result.memberTier }))
-            const destination = result.role === 'admin' ? '/admin/products' : '/products'
+            const requestedNext = new URLSearchParams(window.location.search).get('next')
+            const allowedNext = requestedNext && (
+                ['/products', '/cart', '/checkout', '/success', '/orders', '/admin/products', '/admin/coupons'].includes(requestedNext)
+                || requestedNext.startsWith('/orders/')
+            )
+            const destination = result.role === 'admin'
+                ? allowedNext && requestedNext.startsWith('/admin/') ? requestedNext : '/admin/products'
+                : allowedNext && !requestedNext.startsWith('/admin/') ? requestedNext : '/products'
             router.replace(destination)
         } catch (error) {
             if (error instanceof AuthApiError && error.status === 401) {
