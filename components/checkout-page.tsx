@@ -8,12 +8,19 @@ import OrderSummary from './order-summary'
 import { Button, Chip, Message, PageTitle, Shell } from './store-ui'
 
 function messageFrom(error: unknown) {
-    if (error instanceof StoreApiError) return { message: error.message, code: error.code }
-    return { message: error instanceof Error ? error.message : 'ทำรายการไม่สำเร็จ', code: '' }
+    if (error instanceof StoreApiError) {
+        return { message: error.message, code: error.code }
+    }
+
+    return {
+        message: error instanceof Error ? error.message : 'ทำรายการไม่สำเร็จ',
+        code: '',
+    }
 }
 
 export default function CheckoutPage() {
     const router = useRouter()
+
     const [order, setOrder] = useState<Order | null>(null)
     const [notice, setNotice] = useState('')
     const [noticeCode, setNoticeCode] = useState('')
@@ -25,10 +32,20 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         const token = sessionStorage.getItem('access_token') ?? ''
+
         try {
-            const cached = JSON.parse(sessionStorage.getItem('active_order') ?? 'null') as Order | null
-            if (cached?.orderId) setOrder(cached)
-            const checkoutNotice = JSON.parse(sessionStorage.getItem('checkout_notice') ?? 'null') as { code?: string; message?: string } | null
+            const cached = JSON.parse(
+                sessionStorage.getItem('active_order') ?? 'null',
+            ) as Order | null
+
+            if (cached?.orderId) {
+                setOrder(cached)
+            }
+
+            const checkoutNotice = JSON.parse(
+                sessionStorage.getItem('checkout_notice') ?? 'null',
+            ) as { code?: string; message?: string } | null
+
             if (checkoutNotice?.message) {
                 setNotice(checkoutNotice.message)
                 setNoticeCode(checkoutNotice.code ?? 'COUPON_NOT_APPLICABLE')
@@ -44,17 +61,34 @@ export default function CheckoutPage() {
 
         async function restoreOrder() {
             try {
-                const cached = JSON.parse(sessionStorage.getItem('active_order') ?? 'null') as Order | null
+                const cached = JSON.parse(
+                    sessionStorage.getItem('active_order') ?? 'null',
+                ) as Order | null
+
                 if (cached?.orderId) return
+
                 const { orders } = await store.listOrders(token)
-                const pendingOrder = orders.find((item) => item.status === 'รอชำระเงิน')
+
+                const pendingOrder = orders.find(
+                    (item) => item.status === 'รอชำระเงิน',
+                )
+
                 if (!pendingOrder) {
                     router.replace('/cart')
                     return
                 }
-                const currentOrder = await store.viewOrder(token, pendingOrder.orderId)
+
+                const currentOrder = await store.viewOrder(
+                    token,
+                    pendingOrder.orderId,
+                )
+
                 setOrder(currentOrder)
-                sessionStorage.setItem('active_order', JSON.stringify(currentOrder))
+
+                sessionStorage.setItem(
+                    'active_order',
+                    JSON.stringify(currentOrder),
+                )
             } catch (loadError) {
                 const result = messageFrom(loadError)
                 setError(result.message)
@@ -63,16 +97,40 @@ export default function CheckoutPage() {
                 setIsLoading(false)
             }
         }
+
         void restoreOrder()
     }, [router])
 
+    // ========================================
+    // Payment success
+    // ========================================
+
     async function handlePaySuccess() {
         if (!order) return
+
+        const token = sessionStorage.getItem('access_token') ?? ''
+
+        if (!token) {
+            router.replace('/login')
+            return
+        }
+
         setIsWorking(true)
+        setError('')
+
         try {
-            await store.paySuccess(order.orderId)
-            sessionStorage.setItem('active_order', JSON.stringify({ ...order, status: 'ชำระเงินแล้ว' }))
+            await store.paySuccess(token, order.orderId)
+
+            sessionStorage.setItem(
+                'active_order',
+                JSON.stringify({
+                    ...order,
+                    status: 'ชำระเงินแล้ว',
+                }),
+            )
+
             sessionStorage.removeItem('checkout_notice')
+
             router.replace('/success')
         } catch (paymentError) {
             const result = messageFrom(paymentError)
@@ -83,12 +141,26 @@ export default function CheckoutPage() {
         }
     }
 
+    // ========================================
+    // Payment fail
+    // ========================================
+
     async function handlePayFail() {
         if (!order) return
+
+        const token = sessionStorage.getItem('access_token') ?? ''
+
+        if (!token) {
+            router.replace('/login')
+            return
+        }
+
         setIsWorking(true)
         setError('')
+
         try {
-            const result = await store.payFail(order.orderId)
+            const result = await store.payFail(token, order.orderId)
+
             setNotice(result.message)
             setNoticeCode('')
             setNoticeKind('info')
@@ -101,13 +173,29 @@ export default function CheckoutPage() {
         }
     }
 
+    // ========================================
+    // Cancel checkout
+    // ========================================
+
     async function handleCancel() {
+        if (!order) return
+
         const token = sessionStorage.getItem('access_token') ?? ''
+
+        if (!token) {
+            router.replace('/login')
+            return
+        }
+
         setIsWorking(true)
+        setError('')
+
         try {
-            await store.cancelCheckout(token)
+            await store.cancelCheckout(token, order.orderId)
+
             sessionStorage.removeItem('active_order')
             sessionStorage.removeItem('checkout_notice')
+
             router.replace('/cart')
         } catch (cancelError) {
             const result = messageFrom(cancelError)
@@ -119,19 +207,91 @@ export default function CheckoutPage() {
     }
 
     return (
-        <Shell active="cart" message={notice ? <Message kind={noticeKind} code={noticeCode}>{notice}</Message> : undefined}>
+        <Shell
+            active="cart"
+            message={
+                notice ? (
+                    <Message kind={noticeKind} code={noticeCode}>
+                        {notice}
+                    </Message>
+                ) : undefined
+            }
+        >
             <main data-testid="page-checkout">
-                <PageTitle>ชำระเงิน <span className="muted order-id" data-testid="checkout-order-id">{order?.orderId ?? 'กำลังโหลด...'}</span><Chip status="รอชำระเงิน"><span data-testid="checkout-order-status">รอชำระเงิน</span></Chip></PageTitle>
-                {error && <Message kind="error" code={errorCode}>{error}</Message>}
-                {isLoading && <p role="status">กำลังโหลดออเดอร์...</p>}
-                {order && <OrderSummary variant="checkout" order={order} />}
-                {order && <div className="gateway">
-                    <strong>จำลอง Payment Gateway (test only)</strong>
-                    <p className="muted">ใช้สำหรับทดสอบผลลัพธ์การชำระเงินเท่านั้น</p>
-                    <Button id="gateway-pay-success" data-testid="gateway-pay-success" disabled={isWorking} onClick={handlePaySuccess}>จำลองชำระสำเร็จ</Button>
-                    <Button variant="grey" id="gateway-pay-fail" data-testid="gateway-pay-fail" disabled={isWorking} onClick={handlePayFail}>จำลองชำระล้มเหลว</Button>
-                </div>}
-                {order && <Button variant="danger" id="cancel-checkout-button" disabled={isWorking} onClick={handleCancel}>ยกเลิกการชำระเงิน</Button>}
+                <PageTitle>
+                    ชำระเงิน{' '}
+                    <span
+                        className="muted order-id"
+                        data-testid="checkout-order-id"
+                    >
+                        {order?.orderId ?? 'กำลังโหลด...'}
+                    </span>
+
+                    <Chip status="รอชำระเงิน">
+                        <span data-testid="checkout-order-status">
+                            รอชำระเงิน
+                        </span>
+                    </Chip>
+                </PageTitle>
+
+                {error && (
+                    <Message kind="error" code={errorCode}>
+                        {error}
+                    </Message>
+                )}
+
+                {isLoading && (
+                    <p role="status">กำลังโหลดออเดอร์...</p>
+                )}
+
+                {order && (
+                    <OrderSummary
+                        variant="checkout"
+                        order={order}
+                    />
+                )}
+
+                {order && (
+                    <div className="gateway">
+                        <strong>
+                            จำลอง Payment Gateway (test only)
+                        </strong>
+
+                        <p className="muted">
+                            ใช้สำหรับทดสอบผลลัพธ์การชำระเงินเท่านั้น
+                        </p>
+
+                        <Button
+                            id="gateway-pay-success"
+                            data-testid="gateway-pay-success"
+                            disabled={isWorking}
+                            onClick={handlePaySuccess}
+                        >
+                            จำลองชำระสำเร็จ
+                        </Button>
+
+                        <Button
+                            variant="grey"
+                            id="gateway-pay-fail"
+                            data-testid="gateway-pay-fail"
+                            disabled={isWorking}
+                            onClick={handlePayFail}
+                        >
+                            จำลองชำระล้มเหลว
+                        </Button>
+                    </div>
+                )}
+
+                {order && (
+                    <Button
+                        variant="danger"
+                        id="cancel-checkout-button"
+                        disabled={isWorking}
+                        onClick={handleCancel}
+                    >
+                        ยกเลิกการชำระเงิน
+                    </Button>
+                )}
             </main>
         </Shell>
     )
