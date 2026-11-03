@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { Message } from './store-ui'
 
 type AuthUser = { role?: 'customer' | 'admin' }
 
@@ -16,8 +17,14 @@ export default function AuthBoundary({ children }: { children: ReactNode }) {
     const router = useRouter()
     const requiredRole = roleForPath(pathname)
     const [readyPath, setReadyPath] = useState<string | null>(null)
+    const [forbiddenMessage, setForbiddenMessage] = useState(false)
 
     useEffect(() => {
+        if (sessionStorage.getItem('auth_forbidden_flash') === '1') {
+            sessionStorage.removeItem('auth_forbidden_flash')
+            setForbiddenMessage(true)
+        }
+
         if (!requiredRole) {
             setReadyPath(pathname)
             return
@@ -39,6 +46,7 @@ export default function AuthBoundary({ children }: { children: ReactNode }) {
         }
 
         if (user.role !== requiredRole) {
+            sessionStorage.setItem('auth_forbidden_flash', '1')
             router.replace(user.role === 'admin' ? '/admin/products' : '/products')
             return
         }
@@ -46,9 +54,24 @@ export default function AuthBoundary({ children }: { children: ReactNode }) {
         setReadyPath(pathname)
     }, [pathname, requiredRole, router])
 
+    useEffect(() => {
+        if (!forbiddenMessage) return
+        const timeout = window.setTimeout(() => setForbiddenMessage(false), 8000)
+        return () => window.clearTimeout(timeout)
+    }, [forbiddenMessage])
+
     if (requiredRole && readyPath !== pathname) {
         return <main role="status" aria-live="polite">กำลังตรวจสอบการเข้าสู่ระบบ...</main>
     }
 
-    return children
+    return (
+        <>
+            {forbiddenMessage && (
+                <div className="auth-boundary-message">
+                    <Message kind="error" code="AUTH_FORBIDDEN">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</Message>
+                </div>
+            )}
+            {children}
+        </>
+    )
 }

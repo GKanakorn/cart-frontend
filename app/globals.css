@@ -459,6 +459,15 @@ h2 {
     border-color: #f5c6c2
 }
 
+.auth-boundary-message {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    z-index: 1200;
+    width: min(640px, calc(100vw - 2rem));
+    transform: translateX(-50%);
+}
+
 .message-error>*:first-child {
     margin-left: 0
 }

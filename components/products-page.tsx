@@ -143,7 +143,7 @@ export default function ProductsPage() {
                     <div className="nav-user">
                         <span>{user?.username ?? ''}</span>
                         {user?.role && <span className={`chip ${isAdmin ? 'chip-blue' : 'chip-green'}`}>{user.role}</span>}
-                        {user && <a className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
+                        {user && <a data-testid="logout-button" className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
                     </div>
                 </div>
             </header>
@@ -168,7 +168,8 @@ export default function ProductsPage() {
                                         <p className="muted" data-testid="product-id">รหัสสินค้า: {product.productId}</p>
                                         <strong className="price" data-testid="product-price" data-value={product.price}>{formatPrice(product.price)}</strong>
                                         <div className="muted product-stock" data-testid="product-stock" data-value={product.availableStock}>
-                                            <span>{product.weightGram.toLocaleString('en-US')} g/ชิ้น</span><span>คงเหลือ {product.availableStock}</span>
+                                            <span data-testid="product-weight">{product.weightGram.toLocaleString('en-US')} g/ชิ้น</span>
+                                            <span data-testid="product-available-stock">คงเหลือ {product.availableStock}</span>
                                         </div>
                                         <div className="product-action">
                                             <div className="field">

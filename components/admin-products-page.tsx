@@ -121,7 +121,7 @@ export default function AdminProductsPage() {
                             {products.map((product) => (
                                 <tr data-testid={`admin-product-row-${product.productId}`} key={product.productId}>
                                     <td data-testid="admin-product-id">{product.productId}</td>
-                                    <td>{product.name}</td>
+                                    <td data-testid="admin-product-name">{product.name}</td>
                                     <td data-testid="admin-product-price" data-value={product.price}>{formatPrice(product.price)}</td>
                                     <td data-testid="admin-product-weight" data-value={product.weightGram}>{product.weightGram.toLocaleString('en-US')} g</td>
                                     <td data-testid="admin-product-stock" data-value={product.availableStock}>{product.availableStock}</td>

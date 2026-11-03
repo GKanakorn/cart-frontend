@@ -121,7 +121,7 @@ export default function CheckoutPage() {
     return (
         <Shell active="cart" message={notice ? <Message kind={noticeKind} code={noticeCode}>{notice}</Message> : undefined}>
             <main data-testid="page-checkout">
-                <PageTitle>ชำระเงิน <span className="muted order-id" data-testid="checkout-order-id">{order?.orderId ?? 'กำลังโหลด...'}</span><Chip status="รอชำระเงิน">รอชำระเงิน</Chip></PageTitle>
+                <PageTitle>ชำระเงิน <span className="muted order-id" data-testid="checkout-order-id">{order?.orderId ?? 'กำลังโหลด...'}</span><Chip status="รอชำระเงิน"><span data-testid="checkout-order-status">รอชำระเงิน</span></Chip></PageTitle>
                 {error && <Message kind="error" code={errorCode}>{error}</Message>}
                 {isLoading && <p role="status">กำลังโหลดออเดอร์...</p>}
                 {order && <OrderSummary variant="checkout" order={order} />}
