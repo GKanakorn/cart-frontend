@@ -168,7 +168,7 @@ export default function ProductsPage() {
                     <div className="nav-user">
                         <span>{user?.username ?? ''}</span>
                         {user?.role && <span className={`chip ${isAdmin ? 'chip-blue' : 'chip-green'}`}>{user.role}</span>}
-                        {user && <a data-testid="logout-button" className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
+                        {user && <a data-testid="logout-button" className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user'); sessionStorage.removeItem('auth_role_hint') }}>ออกจากระบบ</a>}
                     </div>
                 </div>
             </header>
@@ -190,7 +190,7 @@ export default function ProductsPage() {
                                     : quantityErrorMessage(errorCode, product.availableStock)
                                 const isAvailable = product.status !== 'ปิดขาย' && product.availableStock > 0
                                 return (
-                                    <article className="card product-card" data-testid={`product-row-${product.productId}`} key={product.productId}>
+                                    <article className={`card product-card${isAvailable ? '' : ' product-card-unavailable'}`} data-testid={`product-row-${product.productId}`} key={product.productId}>
                                         <img className="product-card-image" src="/images/coffee-beans.png" alt={`รูปสินค้า ${product.name}`} />
                                         <h2 data-testid="product-name">{product.name}</h2>
                                         <p className="muted" data-testid="product-id">รหัสสินค้า: {product.productId}</p>
@@ -199,7 +199,7 @@ export default function ProductsPage() {
                                             <span data-testid="product-weight">{product.weightGram.toLocaleString('en-US')} g/ชิ้น</span>
                                             <span data-testid="product-available-stock">คงเหลือ {product.availableStock}</span>
                                         </div>
-                                        <p data-testid="product-availability">{isAvailable ? 'พร้อมขาย' : 'ไม่พร้อมขาย'}</p>
+                                        <p className={`product-availability${isAvailable ? '' : ' product-availability-unavailable'}`} data-testid="product-availability">{isAvailable ? 'พร้อมขาย' : 'ไม่พร้อมขาย'}</p>
                                         <div className="product-action">
                                             <div className="field">
                                                 <label htmlFor={`product-add-qty-${product.productId}`}>จำนวน</label>

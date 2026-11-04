@@ -18,7 +18,14 @@ export default function LoginForm() {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
-        if (new URLSearchParams(window.location.search).get('error') === 'AUTH_REQUIRED') {
+        const params = new URLSearchParams(window.location.search)
+        const errorCode = params.get('error')
+        const requestedNext = params.get('next') ?? ''
+        const attemptedAdminRoute = requestedNext.startsWith('/admin/')
+        if (errorCode === 'AUTH_FORBIDDEN' || (errorCode === 'AUTH_REQUIRED' && attemptedAdminRoute)) {
+            setApiError('คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
+            setApiErrorCode('AUTH_FORBIDDEN')
+        } else if (errorCode === 'AUTH_REQUIRED') {
             setApiError('กรุณาเข้าสู่ระบบก่อน')
             setApiErrorCode('AUTH_REQUIRED')
         }
@@ -45,6 +52,7 @@ export default function LoginForm() {
             const result = await login({ username, password })
             sessionStorage.setItem('access_token', result.token)
             sessionStorage.setItem('auth_user', JSON.stringify({ username, role: result.role, memberTier: result.memberTier }))
+            sessionStorage.setItem('auth_role_hint', result.role)
             const requestedNext = new URLSearchParams(window.location.search).get('next')
             const allowedNext = requestedNext && (
                 ['/products', '/cart', '/checkout', '/success', '/orders', '/admin/products', '/admin/coupons'].includes(requestedNext)

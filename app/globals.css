@@ -160,6 +160,12 @@ h2 {
     gap: 7px
 }
 
+.product-card-unavailable {
+    border: 1px solid #e5aaaa;
+    background: #fff8f7;
+    box-shadow: 0 2px 8px rgba(160, 35, 35, .10)
+}
+
 .product-card-image {
     display: block;
     width: 100%;
@@ -167,6 +173,26 @@ h2 {
     object-fit: cover;
     border-radius: 6px;
     background: #edf3e9
+}
+
+.product-card-unavailable .product-card-image {
+    filter: grayscale(.8);
+    opacity: .72
+}
+
+.product-availability {
+    width: fit-content;
+    margin: 2px 0;
+    border-radius: 999px;
+    background: #e8f4e9;
+    padding: 4px 10px;
+    color: #236b32;
+    font-weight: 600
+}
+
+.product-availability-unavailable {
+    background: #fde8e7;
+    color: #b42318
 }
 
 .product-form {
