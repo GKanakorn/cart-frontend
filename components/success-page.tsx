@@ -68,7 +68,7 @@ export default function SuccessPage() {
                         <span className="chip chip-green" data-status={order.status}>{order.status}</span>
                     </div>
                     <OrderSummary variant="success" order={order} />
-                    <Button id="continue-shopping-button" onClick={continueShopping}>เลือกซื้อสินค้าต่อ</Button>
+                    <Button id="continue-shopping-button" data-testid="continue-shopping-button" onClick={continueShopping}>เลือกซื้อสินค้าต่อ</Button>
                 </>}
             </main>
         </Shell>

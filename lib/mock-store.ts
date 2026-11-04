@@ -221,11 +221,11 @@ export const mockStore = {
 
     async listProducts(token: string, signal?: AbortSignal) {
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-        const user = getUserFromToken(token)
+        getUserFromToken(token)
         const state = readState()
-        const products = user.role === 'admin'
-            ? state.products
-            : state.products.filter(isAvailable).map(({ status: _status, ...product }) => product)
+        // Customers can see unavailable products too; addItem still rejects them
+        // with PRODUCT_UNAVAILABLE when they try to add one to the cart.
+        const products = state.products
         return { products }
     },
 

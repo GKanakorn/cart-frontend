@@ -151,6 +151,7 @@ function mapProduct(product: BackendProduct): Product {
 }
 
 function mapCart(cart: BackendCart): CartSnapshot {
+    const stage = mapStoreStage(cart.stage)
     const items = cart.items.map((item) => ({
         productId: item.productId,
         name: item.productName,
@@ -160,14 +161,14 @@ function mapCart(cart: BackendCart): CartSnapshot {
     }))
 
     return {
-        stage: mapStoreStage(cart.stage),
+        stage,
         items,
         itemCount: items.reduce((total, item) => total + item.quantity, 0),
         subtotal: Number(cart.subtotal),
         couponCode: cart.couponCode,
-        checkoutEnabled:
-            items.length > 0 &&
-            items.every((item) => item.available),
+        // Let the customer attempt checkout with unavailable items so the
+        // checkout API can return the appropriate user-facing validation error.
+        checkoutEnabled: stage === "ตะกร้า" && items.length > 0,
     }
 }
 

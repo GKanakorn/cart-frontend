@@ -286,6 +286,7 @@ export default function CheckoutPage() {
                     <Button
                         variant="danger"
                         id="cancel-checkout-button"
+                        data-testid="cancel-checkout-button"
                         disabled={isWorking}
                         onClick={handleCancel}
                     >

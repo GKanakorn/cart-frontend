@@ -623,7 +623,7 @@ export default function CartPage() {
                             )}
                         </section>
 
-                        <aside className="card summary">
+                        <aside className="card summary" data-testid="cart-summary">
                             <h2>สรุปคำสั่งซื้อ</h2>
 
                             <div className="summary-line">
