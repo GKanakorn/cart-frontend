@@ -27,6 +27,7 @@ export default function CheckoutPage() {
     const [noticeKind, setNoticeKind] = useState<'notice' | 'info'>('notice')
     const [error, setError] = useState('')
     const [errorCode, setErrorCode] = useState('')
+    const [routeError, setRouteError] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [isWorking, setIsWorking] = useState(false)
 
@@ -50,8 +51,17 @@ export default function CheckoutPage() {
                 setNotice(checkoutNotice.message)
                 setNoticeCode(checkoutNotice.code ?? 'COUPON_NOT_APPLICABLE')
             }
+
+            const operationError = JSON.parse(
+                sessionStorage.getItem('operation_error_flash') ?? 'null',
+            ) as { code?: string; message?: string } | null
+            sessionStorage.removeItem('operation_error_flash')
+            if (operationError?.message) {
+                setRouteError(operationError.message)
+            }
         } catch {
             sessionStorage.removeItem('active_order')
+            sessionStorage.removeItem('operation_error_flash')
         }
 
         if (!token) {
@@ -100,6 +110,12 @@ export default function CheckoutPage() {
 
         void restoreOrder()
     }, [router])
+
+    useEffect(() => {
+        if (!routeError) return
+        const timeout = window.setTimeout(() => setRouteError(''), 8000)
+        return () => window.clearTimeout(timeout)
+    }, [routeError])
 
     // ========================================
     // Payment success
@@ -217,6 +233,13 @@ export default function CheckoutPage() {
                 ) : undefined
             }
         >
+            {routeError && (
+                <div className="checkout-toast">
+                    <Message kind="error" code="OPERATION_NOT_ALLOWED">
+                        {routeError}
+                    </Message>
+                </div>
+            )}
             <main data-testid="page-checkout">
                 <PageTitle>
                     ชำระเงิน{' '}

@@ -78,7 +78,14 @@ export default function ProductsPage() {
                 setProducts(productResult.products)
                 setItemCount(cart.itemCount)
                 setCartQuantities(Object.fromEntries(cart.items.map((item) => [item.productId, item.quantity])))
-                if (cart.stage === 'ชำระเงิน') router.replace('/checkout')
+                if (cart.stage === 'ชำระเงิน') {
+                    sessionStorage.setItem('operation_error_flash', JSON.stringify({
+                        code: 'OPERATION_NOT_ALLOWED',
+                        message: 'ยังมีออเดอร์รอชำระเงินอยู่ จึงไม่สามารถทำรายการอื่นได้',
+                    }))
+                    router.replace('/checkout')
+                    return
+                }
                 if (cart.stage === 'สำเร็จ') router.replace('/success')
             } catch (requestError) {
                 if (requestError instanceof Error && requestError.name === 'AbortError') return

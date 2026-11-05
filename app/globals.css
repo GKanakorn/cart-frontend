@@ -494,6 +494,27 @@ h2 {
     transform: translateX(-50%);
 }
 
+.checkout-toast {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    z-index: 1200;
+    width: min(640px, calc(100vw - 2rem));
+    transform: translateX(-50%);
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .14))
+}
+
+.checkout-toast .message {
+    min-height: 0;
+    border: 1px solid #f5c6c2;
+    border-radius: 8px;
+    padding: 12px 16px
+}
+
+.checkout-toast .message>*:first-child {
+    margin-left: 0
+}
+
 .message-error>*:first-child {
     margin-left: 0
 }

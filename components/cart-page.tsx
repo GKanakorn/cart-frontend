@@ -13,14 +13,12 @@ function errorDetails(error: unknown) {
         return {
             message: error.message,
             code: error.code,
-            productIds: error.productIds,
         }
     }
 
     return {
         message: error instanceof Error ? error.message : 'ทำรายการไม่สำเร็จ',
         code: '',
-        productIds: undefined,
     }
 }
 
@@ -43,7 +41,6 @@ export default function CartPage() {
     const [speed, setSpeed] = useState<Speed>('standard')
     const [error, setError] = useState('')
     const [errorCode, setErrorCode] = useState('')
-    const [errorProductIds, setErrorProductIds] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isWorking, setIsWorking] = useState(false)
 
@@ -124,7 +121,6 @@ export default function CartPage() {
 
             setError(details.message)
             setErrorCode(details.code)
-            setErrorProductIds(details.productIds ?? [])
         } finally {
             if (!signal?.aborted) {
                 setIsLoading(false)
@@ -149,7 +145,6 @@ export default function CartPage() {
     ) {
         setError('')
         setErrorCode('')
-        setErrorProductIds([])
 
         setQuantityActionErrors((current) => ({
             ...current,
@@ -209,7 +204,6 @@ export default function CartPage() {
         setIsWorking(true)
         setError('')
         setErrorCode('')
-        setErrorProductIds([])
 
         try {
             setCart(await action())
@@ -227,7 +221,6 @@ export default function CartPage() {
             } else {
                 setError(details.message)
                 setErrorCode(details.code)
-                setErrorProductIds(details.productIds ?? [])
             }
         } finally {
             setIsWorking(false)
@@ -283,7 +276,6 @@ export default function CartPage() {
         setIsWorking(true)
         setError('')
         setErrorCode('')
-        setErrorProductIds([])
 
         try {
             setCart(
@@ -296,7 +288,6 @@ export default function CartPage() {
 
             setError(details.message)
             setErrorCode(details.code)
-            setErrorProductIds(details.productIds ?? [])
         } finally {
             setIsWorking(false)
         }
@@ -308,7 +299,6 @@ export default function CartPage() {
         setIsWorking(true)
         setError('')
         setErrorCode('')
-        setErrorProductIds([])
 
         try {
             const result = await store.pressCheckout(
@@ -337,7 +327,6 @@ export default function CartPage() {
 
             setError(details.message)
             setErrorCode(details.code)
-            setErrorProductIds(details.productIds ?? [])
         } finally {
             setIsWorking(false)
         }
@@ -350,10 +339,7 @@ export default function CartPage() {
 
                 {error && errorCode !== 'COUPON_INVALID' && (
                     <Message kind="error" code={errorCode}>
-                        {`${error}${errorProductIds.length > 0
-                            ? ` (${errorProductIds.join(', ')})`
-                            : ''
-                        }`}
+                        {error}
                     </Message>
                 )}
 
@@ -570,7 +556,9 @@ export default function CartPage() {
                             </div>
 
                             {cart.itemCount === 0 && (
-                                <Message kind="info">ตะกร้าว่าง</Message>
+                                <div data-testid="cart-empty-message">
+                                    <Message kind="info">ตะกร้าว่าง</Message>
+                                </div>
                             )}
 
                             <div className="coupon-row">
