@@ -37,11 +37,18 @@ export default function AuthBoundary({ children }: { children: ReactNode }) {
         } catch {
             sessionStorage.removeItem('auth_user')
         }
+        if (!user?.role) {
+            const roleHint = sessionStorage.getItem('auth_role_hint')
+            if (roleHint === 'customer' || roleHint === 'admin') user = { role: roleHint }
+        }
 
         if (!token || !user?.role) {
             const query = new URLSearchParams(window.location.search).toString()
             const next = `${pathname}${query ? `?${query}` : ''}`
-            router.replace(`/login?next=${encodeURIComponent(next)}&error=AUTH_REQUIRED`)
+            const errorCode = user?.role && user.role !== requiredRole
+                ? 'AUTH_FORBIDDEN'
+                : 'AUTH_REQUIRED'
+            router.replace(`/login?next=${encodeURIComponent(next)}&error=${errorCode}`)
             return
         }
 

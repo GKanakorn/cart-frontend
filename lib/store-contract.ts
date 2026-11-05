@@ -75,6 +75,43 @@ export type CheckoutResult = Order & {
     notice?: { code: 'COUPON_NOT_APPLICABLE'; message: string }
 }
 
+const USER_MESSAGES_BY_ERROR_CODE: Record<string, string> = {
+    AUTH_REQUIRED: 'กรุณาเข้าสู่ระบบ',
+    AUTH_FORBIDDEN: 'คุณไม่มีสิทธิ์ดำเนินการนี้',
+    AUTH_INVALID_CREDENTIALS: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+    VALIDATION_ERROR: 'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง',
+    QTY_OUT_OF_RANGE: 'จำนวนต้องอยู่ระหว่าง 1 ถึง 10',
+    PRODUCT_NOT_FOUND: 'ไม่พบสินค้า',
+    ITEM_NOT_IN_CART: 'ไม่พบสินค้าในตะกร้า',
+    PRODUCT_UNAVAILABLE: 'สินค้านี้ไม่พร้อมขาย',
+    INSUFFICIENT_STOCK: 'จำนวนสินค้าในสต็อกไม่เพียงพอ',
+    OPERATION_NOT_ALLOWED: 'ไม่สามารถทำรายการนี้ได้ในสถานะปัจจุบัน',
+    ORDER_NOT_FOUND: 'ไม่พบออเดอร์',
+    CART_EMPTY: 'ตะกร้าว่าง',
+    COUPON_INVALID: 'คูปองไม่ถูกต้องหรือปิดใช้งาน',
+    COUPON_NOT_APPLICABLE: 'คูปองไม่สามารถใช้กับคำสั่งซื้อนี้',
+    ITEMS_UNAVAILABLE: 'มีสินค้าที่ไม่พร้อมขาย',
+    WEIGHT_LIMIT_EXCEEDED: 'น้ำหนักรวมเกิน 20,000 กรัม',
+    COUPON_NOT_FOUND: 'ไม่พบคูปอง',
+    API_CONFIG_ERROR: 'ยังไม่ได้ตั้งค่าการเชื่อมต่อระบบ',
+    API_UNAVAILABLE: 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่อีกครั้ง',
+    API_RESPONSE_INVALID: 'ระบบตอบกลับข้อมูลไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
+}
+
+function userFacingErrorMessage(message: string, code: string, productIds?: string[]) {
+    if (code === 'ITEMS_UNAVAILABLE' && productIds?.length) {
+        return `มีสินค้าที่ไม่พร้อมขาย (${productIds.join(', ')})`
+    }
+
+    const mappedMessage = USER_MESSAGES_BY_ERROR_CODE[code]
+    if (mappedMessage) return mappedMessage
+
+    // Do not expose untranslated backend text for unknown error codes.
+    return /[\u0E00-\u0E7F]/.test(message)
+        ? message
+        : 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+}
+
 export class StoreApiError extends Error {
     constructor(
         message: string,
@@ -83,7 +120,7 @@ export class StoreApiError extends Error {
         public readonly fields?: string[],
         public readonly productIds?: string[],
     ) {
-        super(message)
+        super(userFacingErrorMessage(message, code, productIds))
         this.name = 'StoreApiError'
     }
 }

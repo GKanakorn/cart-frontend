@@ -13,7 +13,21 @@ function formatPrice(price: number) {
 }
 
 function getErrorMessage(error: unknown) {
-    if (error instanceof StoreApiError) return { message: error.message, code: error.code }
+    if (error instanceof StoreApiError) {
+        const quantityCode = error.code as QuantityErrorCode
+        const knownQuantityCodes: QuantityErrorCode[] = [
+            'VALIDATION_ERROR',
+            'QTY_OUT_OF_RANGE',
+            'PRODUCT_NOT_FOUND',
+            'ITEM_NOT_IN_CART',
+            'PRODUCT_UNAVAILABLE',
+            'INSUFFICIENT_STOCK',
+        ]
+        const message = knownQuantityCodes.includes(quantityCode)
+            ? quantityErrorMessage(quantityCode as Exclude<QuantityErrorCode, 'OK'>, 0)
+            : error.message
+        return { message, code: error.code }
+    }
     return { message: error instanceof Error ? error.message : 'ทำรายการไม่สำเร็จ', code: '' }
 }
 
@@ -27,6 +41,7 @@ export default function ProductsPage() {
     const [actionError, setActionError] = useState<{ message: string; code: string; productId: string } | null>(null)
     const [hasToken, setHasToken] = useState(true)
     const [itemCount, setItemCount] = useState(0)
+    const [cartQuantities, setCartQuantities] = useState<Record<string, number>>({})
     const [quantities, setQuantities] = useState<Record<string, string>>({})
     const [quantityErrors, setQuantityErrors] = useState<Record<string, QuantityErrorCode | undefined>>({})
     const [addingProductId, setAddingProductId] = useState<string | null>(null)
@@ -62,7 +77,15 @@ export default function ProductsPage() {
                 if (controller.signal.aborted) return
                 setProducts(productResult.products)
                 setItemCount(cart.itemCount)
-                if (cart.stage === 'ชำระเงิน') router.replace('/checkout')
+                setCartQuantities(Object.fromEntries(cart.items.map((item) => [item.productId, item.quantity])))
+                if (cart.stage === 'ชำระเงิน') {
+                    sessionStorage.setItem('operation_error_flash', JSON.stringify({
+                        code: 'OPERATION_NOT_ALLOWED',
+                        message: 'ยังมีออเดอร์รอชำระเงินอยู่ จึงไม่สามารถทำรายการอื่นได้',
+                    }))
+                    router.replace('/checkout')
+                    return
+                }
                 if (cart.stage === 'สำเร็จ') router.replace('/success')
             } catch (requestError) {
                 if (requestError instanceof Error && requestError.name === 'AbortError') return
@@ -85,12 +108,14 @@ export default function ProductsPage() {
     function handleQuantityChange(product: Product, event: ChangeEvent<HTMLInputElement>) {
         const value = event.currentTarget.value
         const id = product.productId
+        const available = product.status !== 'ปิดขาย' && product.availableStock > 0
+        const currentQtyInCart = cartQuantities[id] ?? 0
         setQuantities((current) => ({ ...current, [id]: value }))
         setQuantityErrors((current) => ({
             ...current,
             [id]: validateQuantityChange({
-                operation: 'add', quantity: value, productExists: true, inCart: false,
-                available: product.availableStock > 0, currentQtyInCart: 0, availableStock: product.availableStock,
+                operation: 'add', quantity: value, productExists: true, inCart: currentQtyInCart > 0,
+                available, currentQtyInCart, availableStock: product.availableStock,
             }),
         }))
         if (actionError?.productId === id) setActionError(null)
@@ -106,12 +131,16 @@ export default function ProductsPage() {
     async function handleAddItem(product: Product) {
         const token = sessionStorage.getItem('access_token') ?? ''
         const quantity = quantities[product.productId] ?? '1'
+        const available = product.status !== 'ปิดขาย' && product.availableStock > 0
+        const currentQtyInCart = cartQuantities[product.productId] ?? 0
         const errorCode = validateQuantityChange({
-            operation: 'add', quantity, productExists: true, inCart: false,
-            available: product.availableStock > 0, currentQtyInCart: 0, availableStock: product.availableStock,
+            operation: 'add', quantity, productExists: true, inCart: currentQtyInCart > 0,
+            available, currentQtyInCart, availableStock: product.availableStock,
         })
         setQuantityErrors((current) => ({ ...current, [product.productId]: errorCode }))
-        if (errorCode !== 'OK' || !token) return
+        // Send unavailable products to the store so its domain error is surfaced
+        // as an action error (and the add button remains usable for this case).
+        if ((errorCode !== 'OK' && errorCode !== 'PRODUCT_UNAVAILABLE') || !token) return
 
         setAddingProductId(product.productId)
         setError('')
@@ -120,9 +149,12 @@ export default function ProductsPage() {
         try {
             const cart = await store.addItem(token, product.productId, Number(quantity))
             setItemCount(cart.itemCount)
+            setCartQuantities(Object.fromEntries(cart.items.map((item) => [item.productId, item.quantity])))
             setNotice('เพิ่มสินค้าลงตะกร้าแล้ว')
         } catch (requestError) {
-            const result = getErrorMessage(requestError)
+            const result = requestError instanceof StoreApiError && requestError.code === 'INSUFFICIENT_STOCK'
+                ? { ...getErrorMessage(requestError), message: `สินค้าเหลือ ${product.availableStock} ชิ้น` }
+                : getErrorMessage(requestError)
             setActionError({ ...result, productId: product.productId })
         } finally {
             setAddingProductId(null)
@@ -143,16 +175,16 @@ export default function ProductsPage() {
                     <div className="nav-user">
                         <span>{user?.username ?? ''}</span>
                         {user?.role && <span className={`chip ${isAdmin ? 'chip-blue' : 'chip-green'}`}>{user.role}</span>}
-                        {user && <a data-testid="logout-button" className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user') }}>ออกจากระบบ</a>}
+                        {user && <a data-testid="logout-button" className="btn btn-outline small" href="/login" onClick={() => { sessionStorage.removeItem('access_token'); sessionStorage.removeItem('auth_user'); sessionStorage.removeItem('auth_role_hint') }}>ออกจากระบบ</a>}
                     </div>
                 </div>
             </header>
             <div className="content">
                 <main data-testid="page-products">
                     <div className="title-row"><h1>สินค้า</h1></div>
-                    {!hasToken && <div className="message message-error" data-testid="app-message" data-kind="error" data-code="AUTH_REQUIRED" role="alert">กรุณาเข้าสู่ระบบเพื่อดูสินค้า <a href="/login">เข้าสู่ระบบ</a></div>}
-                    {error && <div className="message message-error" data-testid="app-message" data-kind="error" data-code={errorCode} role="alert">{error}</div>}
-                    {notice && <div className="message message-info" data-testid="app-message" data-kind="info" data-code="" role="status">{notice}</div>}
+                    {!hasToken && <div id="products-auth-error" className="message message-error" data-testid="products-auth-error" data-kind="error" data-code="AUTH_REQUIRED" role="alert">กรุณาเข้าสู่ระบบเพื่อดูสินค้า <a href="/login">เข้าสู่ระบบ</a></div>}
+                    {error && <div id="products-load-error" className="message message-error" data-testid="products-load-error" data-kind="error" data-code={errorCode} role="alert">{error}</div>}
+                    {notice && <div id="product-add-success-message" className="message message-info" data-testid="product-add-success-message" data-kind="info" data-code="" role="status">{notice}</div>}
                     {isLoading && <p role="status">กำลังโหลดสินค้า...</p>}
                     {!isLoading && hasToken && !error && products.length === 0 && <p className="muted">ยังไม่มีสินค้า</p>}
                     {!isLoading && !error && products.length > 0 && (
@@ -160,9 +192,12 @@ export default function ProductsPage() {
                             {products.map((product) => {
                                 const quantity = quantities[product.productId] ?? '1'
                                 const errorCode = quantityErrors[product.productId] ?? 'OK'
-                                const quantityError = errorCode === 'OK' ? '' : quantityErrorMessage(errorCode, product.availableStock)
+                                const quantityError = errorCode === 'OK' || errorCode === 'PRODUCT_UNAVAILABLE'
+                                    ? ''
+                                    : quantityErrorMessage(errorCode, product.availableStock)
+                                const isAvailable = product.status !== 'ปิดขาย' && product.availableStock > 0
                                 return (
-                                    <article className="card product-card" data-testid={`product-row-${product.productId}`} key={product.productId}>
+                                    <article className={`card product-card${isAvailable ? '' : ' product-card-unavailable'}`} data-testid={`product-row-${product.productId}`} key={product.productId}>
                                         <img className="product-card-image" src="/images/coffee-beans.png" alt={`รูปสินค้า ${product.name}`} />
                                         <h2 data-testid="product-name">{product.name}</h2>
                                         <p className="muted" data-testid="product-id">รหัสสินค้า: {product.productId}</p>
@@ -171,18 +206,19 @@ export default function ProductsPage() {
                                             <span data-testid="product-weight">{product.weightGram.toLocaleString('en-US')} g/ชิ้น</span>
                                             <span data-testid="product-available-stock">คงเหลือ {product.availableStock}</span>
                                         </div>
+                                        <p className={`product-availability${isAvailable ? '' : ' product-availability-unavailable'}`} data-testid="product-availability">{isAvailable ? 'พร้อมขาย' : 'ไม่พร้อมขาย'}</p>
                                         <div className="product-action">
                                             <div className="field">
                                                 <label htmlFor={`product-add-qty-${product.productId}`}>จำนวน</label>
                                                 <div className="quantity-control">
                                                     <button type="button" className="quantity-step" data-testid="product-qty-decrease" aria-label={`ลดจำนวน ${product.name}`} disabled={product.availableStock < 1 || Number(quantity) <= 1} onClick={() => adjustProductQuantity(product, -1)}>−</button>
-                                                    <input id={`product-add-qty-${product.productId}`} data-testid="product-add-qty" type="number" min="1" max={Math.min(10, product.availableStock)} step="1" required value={quantity} disabled={product.availableStock < 1} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? `product-add-qty-error-${product.productId}` : undefined} onChange={(event) => handleQuantityChange(product, event)} />
+                                                    <input id={`product-add-qty-${product.productId}`} data-testid="product-add-qty" type="number" min="1" max={Math.max(1, Math.min(10, product.availableStock))} step="1" required value={quantity} aria-invalid={Boolean(quantityError && errorCode !== 'PRODUCT_UNAVAILABLE')} aria-describedby={quantityError ? `product-quantity-error-${product.productId}` : undefined} onChange={(event) => handleQuantityChange(product, event)} />
                                                     <button type="button" className="quantity-step" data-testid="product-qty-increase" aria-label={`เพิ่มจำนวน ${product.name}`} disabled={product.availableStock < 1 || Number(quantity) >= Math.min(10, product.availableStock)} onClick={() => adjustProductQuantity(product, 1)}>+</button>
                                                 </div>
-                                                {quantityError && <p className="login-field-error" id={`product-add-qty-error-${product.productId}`} data-testid="app-message" data-kind="error" data-code={errorCode} role="alert">{quantityError}</p>}
-                                                {actionError?.productId === product.productId && <p className="login-field-error" data-testid="app-message" data-kind="error" data-code={actionError.code} role="alert">{actionError.message}</p>}
+                                                {quantityError && <p className="login-field-error" id={`product-quantity-error-${product.productId}`} data-testid={`product-quantity-error-${product.productId}`} data-kind="error" data-code={errorCode} role="alert">{quantityError}</p>}
+                                                {actionError?.productId === product.productId && <p id={`product-add-error-${product.productId}`} className="login-field-error" data-testid={`product-add-error-${product.productId}`} data-kind="error" data-code={actionError.code} role="alert">{actionError.message}</p>}
                                             </div>
-                                            <button type="button" data-testid="product-add-button" className="btn btn-primary" disabled={product.availableStock < 1 || Boolean(quantityError) || addingProductId === product.productId} onClick={() => handleAddItem(product)}>{addingProductId === product.productId ? 'กำลังเพิ่ม...' : 'เพิ่มลงตะกร้า'}</button>
+                                            <button type="button" data-testid="product-add-button" className="btn btn-primary" disabled={Boolean(quantityError && errorCode !== 'PRODUCT_UNAVAILABLE') || addingProductId === product.productId} onClick={() => handleAddItem(product)}>{addingProductId === product.productId ? 'กำลังเพิ่ม...' : 'เพิ่มลงตะกร้า'}</button>
                                         </div>
                                     </article>
                                 )
